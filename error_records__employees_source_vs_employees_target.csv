@@ -1,0 +1,5 @@
+employee_id,first_name,last_name,salary,department,source_file,num_errors,error_type
+102,Mary,Johnson,82500.5,Marketing,file1,4,d
+109,James,Taylor,69500.0,Engineering,file1,1,m
+110,Emily,Thomas,73000.0,HR,file1,1,m
+111,Alex,Martin,70000.0,Marketing,file1,1,m

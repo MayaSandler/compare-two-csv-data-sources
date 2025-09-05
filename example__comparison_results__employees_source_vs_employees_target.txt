@@ -1,5 +1,5 @@
 === COMPARISON DETAILS ===
-Comparison performed on: 2025-07-30 17:13:48
+Comparison performed on: 2025-09-04 22:29:58
 File 1: employees_source.csv
 File 2: employees_target.csv
 
@@ -12,9 +12,9 @@ File 2 records: 8
 === COLUMN ANALYSIS ===
 
 Column Order Differences:
+  Column 'first_name': position 2 in file1, position 4 in file2
   Column 'department': position 5 in file1, position 1 in file2
   Column 'last_name': position 3 in file1, position 5 in file2
-  Column 'first_name': position 2 in file1, position 4 in file2
   Column 'employee_id': position 1 in file1, position 2 in file2
   Column 'salary': position 4 in file1, position 3 in file2
 
@@ -46,16 +46,16 @@ Value mismatches in column 'salary':
 
 Statistical differences in column 'employee_id':
   File1: mean=105.14, median=104.50
-  File2: mean=104.50, median=104.50
+  File 2: mean=104.50, median=104.50
 
 Statistical differences in column 'salary':
   File1: mean=75285.86, median=74000.00
-  File2: mean=74142.93, median=72500.00
+  File 2: mean=74142.93, median=72500.00
 
 === ERROR RECORDS SUMMARY ===
 Total error records found: 4
 
-Duplicate records (1):
+Full-row duplicates (1):
   - employee_id=102 in file1 (appears 4 times)
 
 Missing records in target (3):
@@ -64,10 +64,10 @@ Missing records in target (3):
   - employee_id=111
 
 === VALUE DISTRIBUTION ===
-Different number of unique values in 'last_name':
+Different number of unique values in 'first_name':
   File1: 11 unique values
   File2: 8 unique values
-Different number of unique values in 'first_name':
+Different number of unique values in 'last_name':
   File1: 11 unique values
   File2: 8 unique values
 Different number of unique values in 'employee_id':

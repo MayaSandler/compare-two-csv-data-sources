@@ -1,0 +1,15 @@
+employee_id,first_name,last_name,salary,department
+101,John,Smith,75000.0,Engineering
+102,Mary,Johnson,82500.5,Marketing
+103,Robert,Williams,65000.0,Engineering
+104,Sarah,Brown,71000.0,HR
+105,Michael,Davis,68000.0,Marketing
+106,Jennifer,Miller,79000.0,Engineering
+107,David,Wilson,72500.0,HR
+108,Lisa,Anderson,81000.0,Marketing
+102,Mary,Johnson,82500.5,Marketing
+102,Mary,Johnson,82500.5,Marketing
+102,Mary,Johnson,82500.5,Marketing
+109,James,Taylor,69500.0,Engineering
+110,Emily,Thomas,73000.0,HR
+111,Alex,Martin,70000.0,Marketing

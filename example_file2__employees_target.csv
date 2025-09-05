@@ -1,0 +1,9 @@
+department,employee_id,salary,first_name,last_name
+Engineering,101,,John,Smith
+Marketing,102,82500.5,Mary   ,Johnson
+Engineering,103,65000.0,Robert,Williams
+HR,104,71000.0,Sarah,Brown
+Marketing,105,68000.0,Michael,Davis
+Engineering,106,79000.0,Jennifer,Miller
+HR,107,72500.0,David,Wilson
+Marketing,108,81000.0,Lisa,Anderson

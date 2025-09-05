@@ -105,6 +105,13 @@ This tool provides comprehensive comparison and analysis of two CSV files, check
        - 'e' = Extra record (only in target)
      - `num_errors`: Count of occurrences for duplicate records
 
+## Example analysis and result files
+- Files for analysis:
+   - 'example__employees_source.csv' - example file of employee data as a source/file 1 for the comparison
+   - 'example_file2__employees_target.csv' - example file of employee data as a target/file 2 for the comparison
+- Analysis result files:
+   - 'comparison_results__employees_source_vs_employees_target.txt' - a categorized analysis of the errors found in the file (see Output Files > 2)
+   - 'error_records__employees_source_vs_employees_target.csv' - the records that showed issued in the comparison analysis, their count of errors, and their error_type (i.e. key column duplication, missing, etc.)  (see Output Files > 3)
 
 ## Requirements
 - Python 3.6+
@@ -142,4 +149,5 @@ python csv_comparison.py
 - File names are included in output file names for easy tracking
 - Comparison timestamp is included in the results
 - Duplicate records are consolidated in the error output
-- Text values are quoted in the output for clear whitespace visibility 
+- Text values are quoted in the output for clear whitespace visibility
+

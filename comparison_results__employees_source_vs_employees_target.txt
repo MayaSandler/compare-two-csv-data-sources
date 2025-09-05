@@ -1,0 +1,78 @@
+=== COMPARISON DETAILS ===
+Comparison performed on: 2025-07-30 17:13:48
+File 1: employees_source.csv
+File 2: employees_target.csv
+
+
+=== BASIC RECORD COUNT ===
+Record Count Check: FAIL
+File 1 records: 14
+File 2 records: 8
+
+=== COLUMN ANALYSIS ===
+
+Column Order Differences:
+  Column 'department': position 5 in file1, position 1 in file2
+  Column 'last_name': position 3 in file1, position 5 in file2
+  Column 'first_name': position 2 in file1, position 4 in file2
+  Column 'employee_id': position 1 in file1, position 2 in file2
+  Column 'salary': position 4 in file1, position 3 in file2
+
+=== DATA TYPE CONSISTENCY ===
+
+=== NULL VALUE ANALYSIS ===
+Null/Empty value mismatch in 'salary':
+  File1: 0 nulls, 0 empty strings
+  File2: 1 nulls, 0 empty strings
+
+=== FORMAT CONSISTENCY ===
+Leading/trailing space differences in 'first_name':
+  File1: 0 values with extra spaces
+  File2: 1 values with extra spaces
+
+=== VALUE COMPARISON ===
+
+Value mismatches in column 'first_name':
+  - employee_id=102:
+    Source: 'Mary'
+    Target: 'Mary   '
+
+Value mismatches in column 'salary':
+  - employee_id=101:
+    Source: 75000.0
+    Target: nan
+
+=== STATISTICAL COMPARISON ===
+
+Statistical differences in column 'employee_id':
+  File1: mean=105.14, median=104.50
+  File2: mean=104.50, median=104.50
+
+Statistical differences in column 'salary':
+  File1: mean=75285.86, median=74000.00
+  File2: mean=74142.93, median=72500.00
+
+=== ERROR RECORDS SUMMARY ===
+Total error records found: 4
+
+Duplicate records (1):
+  - employee_id=102 in file1 (appears 4 times)
+
+Missing records in target (3):
+  - employee_id=109
+  - employee_id=110
+  - employee_id=111
+
+=== VALUE DISTRIBUTION ===
+Different number of unique values in 'last_name':
+  File1: 11 unique values
+  File2: 8 unique values
+Different number of unique values in 'first_name':
+  File1: 11 unique values
+  File2: 8 unique values
+Different number of unique values in 'employee_id':
+  File1: 11 unique values
+  File2: 8 unique values
+Different number of unique values in 'salary':
+  File1: 11 unique values
+  File2: 7 unique values

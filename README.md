@@ -1,6 +1,16 @@
-# CSV File Comparison Tool
+# Data Comparison Tools
+
+This repository contains *two* powerful data comparison tools for different use cases: 
+1. CSV File Comparison Tool
+2. Snowflake Table Comparison Tool
+
+---
+
+# 📄 CSV File Comparison Tool
 This tool provides comprehensive comparison and analysis of two CSV files, checking for various data quality issues and differences.
 
+**File:** `csv_comparison.py`  
+**Purpose:** Compare two CSV files for data quality issues and differences
 
 ## Features
 - Automatic detection of CSV files from the specified directory
@@ -151,3 +161,144 @@ python csv_comparison.py
 - Duplicate records are consolidated in the error output
 - Text values are quoted in the output for clear whitespace visibility
 
+
+# ❄️ Snowflake Table Comparison Tool
+**File:** `table_comparison_snowpark.py`  
+**Purpose:** Compare two Snowflake tables directly in a Snowflake worksheet using Snowpark. The features and the output of this script is similar to the csv comparison process. To execute this script, please follow section 'How to Run in Snowflake Worksheets'
+
+## Output
+- **Console output**: Real-time comparison results
+- **Text file**: Detailed analysis report (`comparison_results__table1_vs_table2.txt`)
+- **CSV file**: Error records with details (`error_records__table1_vs_table2.csv`)
+
+## Features
+- Record count comparison
+- Column structure analysis  
+- Duplicate detection (full-row and key-based)
+- Missing/extra record identification
+- Data type consistency checks
+- Statistical comparison for numeric columns
+- Value distribution analysis
+
+## How to Run in Snowflake Worksheets
+
+### Step 1: Configure table schemas and key columns in the Python script `table_comparison_snowpark.py` 
+
+```python
+# Update these values in table_comparison_snowpark.py
+TABLE1_CONFIG = {
+    "database": "your_database",
+    "schema": "your_schema", 
+    "table": "table1_name"
+}
+
+TABLE2_CONFIG = {
+    "database": "your_database",
+    "schema": "your_schema",
+    "table": "table2_name"
+}
+
+KEY_COLUMNS = ['employee_id']  # The column that uniquely identifies each record
+```
+### Step 2: In Snowflake
+1. Go to **Worksheets** in your Snowflake account
+2. Create a **new worksheet**
+
+### Step 3: Copy This Code
+Copy and paste this code into your worksheet:
+
+```sql
+EXECUTE IMMEDIATE $$
+import snowflake.snowpark as sp
+from snowflake.snowpark.functions import col, when, isnull, count
+
+# Get active session
+session = sp.get_active_session()
+
+# Import configuration from the Python file
+# This reads the TABLE1_CONFIG, TABLE2_CONFIG, and KEY_COLUMNS from table_comparison_snowpark.py
+exec(open('table_comparison_snowpark.py').read().split('def create_snowpark_session')[0])
+
+# Build table names from configuration
+TABLE1 = f'"{TABLE1_CONFIG["database"]}"."{TABLE1_CONFIG["schema"]}"."{TABLE1_CONFIG["table"]}"'
+TABLE2 = f'"{TABLE2_CONFIG["database"]}"."{TABLE2_CONFIG["schema"]}"."{TABLE2_CONFIG["table"]}"'
+
+# Read tables
+df1 = session.table(TABLE1)
+df2 = session.table(TABLE2)
+
+print("=== BASIC COMPARISON ===")
+count1 = df1.count()
+count2 = df2.count()
+print(f"Table 1 records: {count1}")
+print(f"Table 2 records: {count2}")
+print(f"Records match: {count1 == count2}")
+
+# Column analysis
+cols1 = set(df1.columns)
+cols2 = set(df2.columns)
+print(f"\nCommon columns: {len(cols1.intersection(cols2))}")
+print(f"Missing in Table 2: {cols1 - cols2}")
+print(f"Extra in Table 2: {cols2 - cols1}")
+
+# Duplicate analysis
+if KEY_COLUMNS:
+    dup1 = df1.group_by(*KEY_COLUMNS).agg(count("*").alias("count")).filter(col("count") > 1)
+    dup2 = df2.group_by(*KEY_COLUMNS).agg(count("*").alias("count")).filter(col("count") > 1)
+    print(f"\nDuplicates - Table 1: {dup1.count()}, Table 2: {dup2.count()}")
+
+# Missing records
+missing = df1.join(df2.select(*KEY_COLUMNS), KEY_COLUMNS, "left_anti")
+extra = df2.join(df1.select(*KEY_COLUMNS), KEY_COLUMNS, "left_anti")
+print(f"\nMissing records: {missing.count()}")
+print(f"Extra records: {extra.count()}")
+
+print("\n=== COMPARISON COMPLETE ===")
+$$;
+```
+
+
+### Step 4: Run
+Click **Run** in your Snowflake worksheet to see the comparison results.
+**Note:** The worksheet script automatically reads your configuration from `table_comparison_snowpark.py`, so you only need to update the configuration in one place!
+
+## Alternative: Run Python Script Locally
+
+If you prefer to run the full comparison script locally:
+
+### Prerequisites
+```bash
+pip install -r requirements_snowpark.txt
+```
+
+### Configuration
+Update these variables in `table_comparison_snowpark.py`:
+```python
+SNOWFLAKE_CONFIG = {
+    "account": "your_account.region",
+    "user": "your_username", 
+    "password": "your_password",
+    "warehouse": "your_warehouse",
+    "database": "your_database",
+    "schema": "your_schema"
+}
+
+TABLE1_CONFIG = {
+    "database": "your_database",
+    "schema": "your_schema",
+    "table": "table1_name"
+}
+
+TABLE2_CONFIG = {
+    "database": "your_database", 
+    "schema": "your_schema",
+    "table": "table2_name"
+}
+
+KEY_COLUMNS = ['employee_id']
+```
+
+### Run
+```bash
+python table_comparison_snowpark.py
+```

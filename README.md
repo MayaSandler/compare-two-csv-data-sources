@@ -182,7 +182,11 @@ python csv_comparison.py
 
 ## How to Run in Snowflake Worksheets
 
-### Step 1: Configure table schemas and key columns in the Python script `table_comparison_snowpark.py` 
+### Step 1: In Snowflake - create `table_comparison_snowpark.py` and configure table schemas and key columns
+1. Go to **Worksheets** in your Snowflake account
+2. Create a **new Python worksheet** (not SQL worksheet)
+3. Copy the Python script from the file `table_comparison_snowpark.py' in this repo
+4. Update these lines in the Python script `table_comparison_snowpark.py' to configure your table schemas and key columns 
 
 ```python
 # Update these values in table_comparison_snowpark.py
@@ -200,15 +204,13 @@ TABLE2_CONFIG = {
 
 KEY_COLUMNS = ['employee_id']  # The column that uniquely identifies each record
 ```
-### Step 2: In Snowflake
+### Step 2: In Snowflake - create the execution script that calls the comparison function
 1. Go to **Worksheets** in your Snowflake account
-2. Create a **new worksheet**
+2. Create a **new Python worksheet** (not SQL worksheet)
+3. Copy This code into your worksheet:
 
-### Step 3: Copy This Code
-Copy and paste this code into your worksheet:
 
-```sql
-EXECUTE IMMEDIATE $$
+```python
 import snowflake.snowpark as sp
 from snowflake.snowpark.functions import col, when, isnull, count
 
@@ -254,11 +256,9 @@ print(f"\nMissing records: {missing.count()}")
 print(f"Extra records: {extra.count()}")
 
 print("\n=== COMPARISON COMPLETE ===")
-$$;
 ```
 
-
-### Step 4: Run
+### Step 3: Run
 Click **Run** in your Snowflake worksheet to see the comparison results.
 **Note:** The worksheet script automatically reads your configuration from `table_comparison_snowpark.py`, so you only need to update the configuration in one place!
 

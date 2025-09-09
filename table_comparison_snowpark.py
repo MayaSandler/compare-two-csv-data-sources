@@ -22,96 +22,43 @@ def main(session: sp.Session):
 
     KEY_COLUMNS = ['employee_id']  # The column(s) that uniquely identify each record
     # ===============================================
-    
-    print("SNOWFLAKE TABLE COMPARISON TOOL")
-    print("=" * 50)
-    
-    # Build table names from configuration
-    TABLE1 = f'"{TABLE1_CONFIG["database"]}"."{TABLE1_CONFIG["schema"]}"."{TABLE1_CONFIG["table"]}"'
-    TABLE2 = f'"{TABLE2_CONFIG["database"]}"."{TABLE2_CONFIG["schema"]}"."{TABLE2_CONFIG["table"]}"'
-    
-    print(f"Comparing tables:")
-    print(f"   Table 1: {TABLE1}")
-    print(f"   Table 2: {TABLE2}")
-    print(f"   Key columns: {KEY_COLUMNS}")
-    print("-" * 50)
-
-    try:
-        # Read tables
-        print("Reading tables...")
-        df1 = session.table(TABLE1)
-        df2 = session.table(TABLE2)
-        print("Tables loaded successfully")
-
-        # Basic record count comparison
-        print("\n=== BASIC COMPARISON ===")
-        count1 = df1.count()
-        count2 = df2.count()
-        print(f"Table 1 records: {count1:,}")
-        print(f"Table 2 records: {count2:,}")
-        print(f"Records match: {'YES' if count1 == count2 else 'NO'}")
-
-        # Column analysis
-        print("\n=== COLUMN ANALYSIS ===")
-        cols1 = set(df1.columns)
-        cols2 = set(df2.columns)
-        common_cols = cols1.intersection(cols2)
-        missing_cols = cols1 - cols2
-        extra_cols = cols2 - cols1
+        # Initialize variables
+        missing_count = 0
+        extra_count = 0
+        different_values_count = 0
+        missing_in_2 = None
+        extra_in_2 = None
+        different_records_table1 = None
+        different_records_table2 = None
         
-        print(f"Common columns: {len(common_cols)}")
-        if missing_cols:
-            print(f"Missing in Table 2: {missing_cols}")
-        if extra_cols:
-            print(f"Extra in Table 2: {extra_cols}")
-        if not missing_cols and not extra_cols:
-            print("All columns match perfectly!")
-
-        # Duplicate analysis
-        print("\n=== DUPLICATE ANALYSIS ===")
-        if KEY_COLUMNS:
-            try:
-                dup1 = df1.group_by(*KEY_COLUMNS).agg(count("*").alias("count")).filter(col("count") > 1)
-                dup2 = df2.group_by(*KEY_COLUMNS).agg(count("*").alias("count")).filter(col("count") > 1)
-                dup1_count = dup1.count()
-                dup2_count = dup2.count()
-                
-                print(f"Duplicate groups in Table 1: {dup1_count}")
-                print(f"Duplicate groups in Table 2: {dup2_count}")
-                
-                if dup1_count > 0:
-                    print("Sample duplicates in Table 1:")
-                    dup1.limit(5).show()
-                else:
-                    print("No duplicates found in Table 1")
-                
-                if dup2_count > 0:
-                    print("Sample duplicates in Table 2:")
-                    dup2.limit(5).show()
-                else:
-                    print("No duplicates found in Table 2")
-                    
-            except Exception as e:
-                print(f"Error in duplicate analysis: {e}")
-        else:
-            print("No key columns specified for duplicate analysis")
-
-        # Missing records analysis - ONLY based on key columns
-        print("\n=== MISSING RECORDS ANALYSIS ===")
-        print(f"Analyzing based ONLY on key columns: {KEY_COLUMNS}")
         try:
             # Records with keys in table1 not in table2 (truly missing records)
             df1_keys = df1.select(*KEY_COLUMNS).distinct()
             df2_keys = df2.select(*KEY_COLUMNS).distinct()
             
-            missing_keys = df1_keys.subtract(df2_keys)
-            extra_keys = df2_keys.subtract(df1_keys)
+            # Debug: Show total distinct keys in each table
+            df1_keys_count = df1_keys.count()
+            df2_keys_count = df2_keys.count()
+            print(f"DEBUG: Distinct key combinations in Table 1: {df1_keys_count:,}")
+            print(f"DEBUG: Distinct key combinations in Table 2: {df2_keys_count:,}")
+            
+            # Use left_anti join instead of subtract for more reliable results
+            missing_keys = df1_keys.join(df2_keys, KEY_COLUMNS, "left_anti")
+            extra_keys = df2_keys.join(df1_keys, KEY_COLUMNS, "left_anti")
             
             missing_count = missing_keys.count()
             extra_count = extra_keys.count()
             
             print(f"Key combinations in Table 1 missing from Table 2: {missing_count:,}")
             print(f"Key combinations in Table 2 missing from Table 1: {extra_count:,}")
+            
+            # Debug: Show some sample keys from each table
+            if df1_keys_count > 0:
+                print("DEBUG: Sample keys from Table 1:")
+                df1_keys.limit(3).show()
+            if df2_keys_count > 0:
+                print("DEBUG: Sample keys from Table 2:")
+                df2_keys.limit(3).show()
             
             # Get full records for missing keys
             if missing_count > 0:

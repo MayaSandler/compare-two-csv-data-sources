@@ -31,10 +31,12 @@ def main(session: sp.Session):
     TABLE2 = f'"{TABLE2_CONFIG["database"]}"."{TABLE2_CONFIG["schema"]}"."{TABLE2_CONFIG["table"]}"'
     
     print(f"Comparing tables:")
-    print(f"   Table 1: {TABLE1}")
-    print(f"   Table 2: {TABLE2}")
-    print(f"   Key columns: {KEY_COLUMNS}")
+    print(f"Table 1: {TABLE1}")
+    print(f"Table 2: {TABLE2}")
+    print(f"Key columns: {KEY_COLUMNS}")
     print("-" * 50)
+
+
 
     try:
         # Read tables
@@ -90,8 +92,8 @@ def main(session: sp.Session):
                     dup2.limit(5).show()
                 else:
                     print("No duplicates found in Table 2")
-                    
-            except Exception as e:
+        
+    except Exception as e:
                 print(f"Error in duplicate analysis: {e}")
         else:
             print("No key columns specified for duplicate analysis")
@@ -137,6 +139,14 @@ def main(session: sp.Session):
             if df2_keys_count > 0:
                 print("DEBUG: Sample keys from Table 2:")
                 df2_keys.limit(3).show()
+                
+            # If we're still getting false positives, let's debug the missing keys
+            if missing_count > 0:
+                print("DEBUG: Sample missing keys:")
+                missing_keys.limit(3).show()
+            if extra_count > 0:
+                print("DEBUG: Sample extra keys:")
+                extra_keys.limit(3).show()
             
             # Get full records for missing keys
             if missing_count > 0:
@@ -156,9 +166,6 @@ def main(session: sp.Session):
                 extra_in_2 = None
             
             # Records with same keys but different values in common columns
-            different_values_count = 0
-            different_records_table1 = None
-            different_records_table2 = None
             
             if common_cols and len(common_cols) > len(KEY_COLUMNS):
                 # Find keys that exist in both tables
@@ -201,32 +208,32 @@ def main(session: sp.Session):
                     print("No matching key combinations found between tables")
             else:
                 print("No additional columns to compare beyond key columns")
-                
-        except Exception as e:
+        
+    except Exception as e:
             print(f"Error in missing records analysis: {e}")
 
         # Statistical comparison for numeric columns
         print("\n=== STATISTICAL COMPARISON ===")
         stats_found = False
-        for col_name in common_cols:
-            try:
-                stats1 = df1.select(
-                    avg(col(col_name)).alias("mean"),
-                    median(col(col_name)).alias("median"),
-                    min_func(col(col_name)).alias("min"),
-                    max_func(col(col_name)).alias("max")
-                ).collect()[0]
-                
-                stats2 = df2.select(
-                    avg(col(col_name)).alias("mean"),
-                    median(col(col_name)).alias("median"),
-                    min_func(col(col_name)).alias("min"),
-                    max_func(col(col_name)).alias("max")
-                ).collect()[0]
-                
+    for col_name in common_cols:
+        try:
+            stats1 = df1.select(
+                avg(col(col_name)).alias("mean"),
+                median(col(col_name)).alias("median"),
+                min_func(col(col_name)).alias("min"),
+                max_func(col(col_name)).alias("max")
+            ).collect()[0]
+            
+            stats2 = df2.select(
+                avg(col(col_name)).alias("mean"),
+                median(col(col_name)).alias("median"),
+                min_func(col(col_name)).alias("min"),
+                max_func(col(col_name)).alias("max")
+            ).collect()[0]
+            
                 # Check if there are significant differences
-                if (abs(stats1["MEAN"] - stats2["MEAN"]) > 1e-5 or 
-                    abs(stats1["MEDIAN"] - stats2["MEDIAN"]) > 1e-5):
+            if (abs(stats1["MEAN"] - stats2["MEAN"]) > 1e-5 or 
+                abs(stats1["MEDIAN"] - stats2["MEDIAN"]) > 1e-5):
                     print(f"Statistical differences in '{col_name}':")
                     print(f"   Table1: mean={stats1['MEAN']:.2f}, median={stats1['MEDIAN']:.2f}")
                     print(f"   Table2: mean={stats2['MEAN']:.2f}, median={stats2['MEDIAN']:.2f}")
@@ -234,8 +241,8 @@ def main(session: sp.Session):
                     
             except Exception:
                 # Column is not numeric, skip
-                continue
-        
+            continue
+    
         if not stats_found:
             print("No significant statistical differences found in numeric columns")
 
@@ -352,7 +359,7 @@ def main(session: sp.Session):
         ]
         
         return session.create_dataframe(summary_data, schema=["METRIC", "VALUE"])
-
+        
     except Exception as e:
         print(f"FATAL ERROR: {str(e)}")
         # Return error as DataFrame

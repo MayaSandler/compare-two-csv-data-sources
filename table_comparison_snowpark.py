@@ -207,40 +207,40 @@ def main(session: sp.Session):
             
             # Create DataFrame and save as view
             detailed_df = session.create_dataframe(detailed_summary_data, schema=["METRIC", "VALUE"])
-            detailed_df.create_or_replace_view("DQ_COMPARISON_SUMMARY_VIEW")
+            detailed_df.create_or_replace_view("DEV_SILVER.DQ.DQ_COMPARISON_SUMMARY_VIEW")
             print("Created view: DQ_COMPARISON_SUMMARY_VIEW")
             
             # Create view with missing records (if any)
             if 'missing_in_2' in locals() and missing_count > 0:
-                missing_in_2.create_or_replace_view("DQ_MISSING_RECORDS_VIEW")
+                missing_in_2.create_or_replace_view("DEV_SILVER.DQ.DQ_MISSING_RECORDS_VIEW")                
                 print("Created view: DQ_MISSING_RECORDS_VIEW")
             
             # Create view with extra records (if any)  
             if 'extra_in_2' in locals() and extra_count > 0:
-                extra_in_2.create_or_replace_view("DQ_EXTRA_RECORDS_VIEW")
+                extra_in_2.create_or_replace_view("DEV_SILVER.DQ.DQ_EXTRA_RECORDS_VIEW")
                 print("Created view: DQ_EXTRA_RECORDS_VIEW")
                 
             # Create view with duplicate records from Table 1 (if any)
             if 'dup1' in locals() and dup1_count > 0:
-                dup1.create_or_replace_view("DQ_TABLE1_DUPLICATES_VIEW")
+                dup1.create_or_replace_view("DEV_SILVER.DQ.DQ_TABLE1_DUPLICATES_VIEW")
                 print("Created view: DQ_TABLE1_DUPLICATES_VIEW")
                 
             # Create view with duplicate records from Table 2 (if any)
             if 'dup2' in locals() and dup2_count > 0:
-                dup2.create_or_replace_view("DQ_TABLE2_DUPLICATES_VIEW") 
+                dup2.create_or_replace_view("DEV_SILVER.DQ.DQ_TABLE2_DUPLICATES_VIEW")
                 print("Created view: DQ_TABLE2_DUPLICATES_VIEW")
                 
             print(f"\nViews created successfully! You can now query:")
-            print("- SELECT * FROM DQ_COMPARISON_SUMMARY_VIEW;")
+            print("- SELECT * FROM DEV_SILVER.DQ.DQ_COMPARISON_SUMMARY_VIEW;")
             if missing_count > 0:
-                print("- SELECT * FROM DQ_MISSING_RECORDS_VIEW;")
+                print("- SELECT * FROM DEV_SILVER.DQ.DQ_MISSING_RECORDS_VIEW;")
             if extra_count > 0:
-                print("- SELECT * FROM DQ_EXTRA_RECORDS_VIEW;")
+                print("- SELECT * FROM DEV_SILVER.DQ.DQ_EXTRA_RECORDS_VIEW;")
             if dup1_count > 0:
-                print("- SELECT * FROM DQ_TABLE1_DUPLICATES_VIEW;")
+                print("- SELECT * FROM DEV_SILVER.DQ.DQ_TABLE1_DUPLICATES_VIEW;")
             if dup2_count > 0:
-                print("- SELECT * FROM DQ_TABLE2_DUPLICATES_VIEW;")
-                
+                print("- SELECT * FROM DEV_SILVER.DQ.DQ_TABLE2_DUPLICATES_VIEW;")  
+                              
         except Exception as view_error:
             print(f"Warning: Could not create views: {view_error}")
         # return f"Comparison completed: {count1:,} vs {count2:,} records"

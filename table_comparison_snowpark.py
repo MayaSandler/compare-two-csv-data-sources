@@ -182,16 +182,15 @@ def main(session: sp.Session):
         
         # Return a simple DataFrame with summary results for Snowflake worksheet
         summary_data = [
-            ("TABLE1_RECORDS", count1),
-            ("TABLE2_RECORDS", count2),
+            ("TABLE1_RECORDS", str(count1)),
+            ("TABLE2_RECORDS", str(count2)),
             ("RECORDS_MATCH", "YES" if count1 == count2 else "NO"),
-            ("COMMON_COLUMNS", len(common_cols)),
-            ("MISSING_COLUMNS_T2", len(missing_cols)),
-            ("EXTRA_COLUMNS_T2", len(extra_cols)),
-            ("TOTAL_ISSUES", total_issues),
+            ("COMMON_COLUMNS", str(len(common_cols))),
+            ("MISSING_COLUMNS_T2", str(len(missing_cols))),
+            ("EXTRA_COLUMNS_T2", str(len(extra_cols))),
+            ("TOTAL_ISSUES", str(total_issues)),
             ("STATUS", "PERFECT_MATCH" if total_issues == 0 else "DIFFERENCES_FOUND")
         ]
-
         return session.create_dataframe(summary_data, schema=["METRIC", "VALUE"])
 
     except Exception as e:

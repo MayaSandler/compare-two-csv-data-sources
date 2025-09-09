@@ -185,120 +185,14 @@ python csv_comparison.py
 ### Step 1: In Snowflake - create `table_comparison_snowpark.py` and configure table schemas and key columns
 1. Go to **Worksheets** in your Snowflake account
 2. Create a **new Python worksheet** (not SQL worksheet)
-3. Copy the Python script from the file `table_comparison_snowpark.py' in this repo
-4. Update these lines in the Python script `table_comparison_snowpark.py' to configure your table schemas and key columns 
+3. Copy the Python script from the file `table_comparison_snowpark.py' in this repo into the new Python notebook
+4. In your workbook, update these configuration lines (from the Python script `table_comparison_snowpark.py)' to configure your table schemas and key columns: 
 
-```python
-# Update these values in table_comparison_snowpark.py
-TABLE1_CONFIG = {
-    "database": "your_database",
-    "schema": "your_schema", 
-    "table": "table1_name"
-}
-
-TABLE2_CONFIG = {
-    "database": "your_database",
-    "schema": "your_schema",
-    "table": "table2_name"
-}
-
-KEY_COLUMNS = ['employee_id']  # The column that uniquely identifies each record
-```
-### Step 2: In Snowflake - create the execution script that calls the comparison function
-1. Go to **Worksheets** in your Snowflake account
-2. Create a **new Python worksheet** (not SQL worksheet)
-3. Copy This code into your worksheet:
+   ```python
+   TABLE1_CONFIG = {"database": "DB", "schema": "SCHEMA", "table": "TABLE1"}
+   TABLE2_CONFIG = {"database": "DB", "schema": "SCHEMA", "table": "TABLE2"}  
+   KEY_COLUMNS = ['employee_id']
+   ```
+4. **Click Run**
 
 
-```python
-import snowflake.snowpark as sp
-from snowflake.snowpark.functions import col, when, isnull, count
-
-# Get active session
-session = sp.get_active_session()
-
-# Import configuration from the Python file
-# This reads the TABLE1_CONFIG, TABLE2_CONFIG, and KEY_COLUMNS from table_comparison_snowpark.py
-exec(open('table_comparison_snowpark.py').read().split('def create_snowpark_session')[0])
-
-# Build table names from configuration
-TABLE1 = f'"{TABLE1_CONFIG["database"]}"."{TABLE1_CONFIG["schema"]}"."{TABLE1_CONFIG["table"]}"'
-TABLE2 = f'"{TABLE2_CONFIG["database"]}"."{TABLE2_CONFIG["schema"]}"."{TABLE2_CONFIG["table"]}"'
-
-# Read tables
-df1 = session.table(TABLE1)
-df2 = session.table(TABLE2)
-
-print("=== BASIC COMPARISON ===")
-count1 = df1.count()
-count2 = df2.count()
-print(f"Table 1 records: {count1}")
-print(f"Table 2 records: {count2}")
-print(f"Records match: {count1 == count2}")
-
-# Column analysis
-cols1 = set(df1.columns)
-cols2 = set(df2.columns)
-print(f"\nCommon columns: {len(cols1.intersection(cols2))}")
-print(f"Missing in Table 2: {cols1 - cols2}")
-print(f"Extra in Table 2: {cols2 - cols1}")
-
-# Duplicate analysis
-if KEY_COLUMNS:
-    dup1 = df1.group_by(*KEY_COLUMNS).agg(count("*").alias("count")).filter(col("count") > 1)
-    dup2 = df2.group_by(*KEY_COLUMNS).agg(count("*").alias("count")).filter(col("count") > 1)
-    print(f"\nDuplicates - Table 1: {dup1.count()}, Table 2: {dup2.count()}")
-
-# Missing records
-missing = df1.join(df2.select(*KEY_COLUMNS), KEY_COLUMNS, "left_anti")
-extra = df2.join(df1.select(*KEY_COLUMNS), KEY_COLUMNS, "left_anti")
-print(f"\nMissing records: {missing.count()}")
-print(f"Extra records: {extra.count()}")
-
-print("\n=== COMPARISON COMPLETE ===")
-```
-
-### Step 3: Run
-Click **Run** in your Snowflake worksheet to see the comparison results.
-**Note:** The worksheet script automatically reads your configuration from `table_comparison_snowpark.py`, so you only need to update the configuration in one place!
-
-## Alternative: Run Python Script Locally
-
-If you prefer to run the full comparison script locally:
-
-### Prerequisites
-```bash
-pip install -r requirements_snowpark.txt
-```
-
-### Configuration
-Update these variables in `table_comparison_snowpark.py`:
-```python
-SNOWFLAKE_CONFIG = {
-    "account": "your_account.region",
-    "user": "your_username", 
-    "password": "your_password",
-    "warehouse": "your_warehouse",
-    "database": "your_database",
-    "schema": "your_schema"
-}
-
-TABLE1_CONFIG = {
-    "database": "your_database",
-    "schema": "your_schema",
-    "table": "table1_name"
-}
-
-TABLE2_CONFIG = {
-    "database": "your_database", 
-    "schema": "your_schema",
-    "table": "table2_name"
-}
-
-KEY_COLUMNS = ['employee_id']
-```
-
-### Run
-```bash
-python table_comparison_snowpark.py
-```

@@ -178,8 +178,26 @@ def main(session: sp.Session):
         
         print(f"Final Summary: {count1:,} vs {count2:,} records")
         
-        return f"Comparison completed: {count1:,} vs {count2:,} records"
+        # return f"Comparison completed: {count1:,} vs {count2:,} records"
         
+        # Return a simple DataFrame with summary results for Snowflake worksheet
+        summary_data = [
+            ("TABLE1_RECORDS", count1),
+            ("TABLE2_RECORDS", count2),
+            ("RECORDS_MATCH", "YES" if count1 == count2 else "NO"),
+            ("COMMON_COLUMNS", len(common_cols)),
+            ("MISSING_COLUMNS_T2", len(missing_cols)),
+            ("EXTRA_COLUMNS_T2", len(extra_cols)),
+            ("TOTAL_ISSUES", total_issues),
+            ("STATUS", "PERFECT_MATCH" if total_issues == 0 else "DIFFERENCES_FOUND")
+        ]
+
+        return session.create_dataframe(summary_data, schema=["METRIC", "VALUE"])
+
     except Exception as e:
         print(f"FATAL ERROR: {str(e)}")
-        return f"Error: {str(e)}"
+        # return f"Error: {str(e)}"
+        
+        # Return error as DataFrame
+        error_data = [("ERROR", str(e))]
+        return session.create_dataframe(error_data, schema=["STATUS", "MESSAGE"])

@@ -178,8 +178,73 @@ def main(session: sp.Session):
         
         print(f"Final Summary: {count1:,} vs {count2:,} records")
         
-        # return f"Comparison completed: {count1:,} vs {count2:,} records"
         
+        # ================================================================
+        # CREATE VIEWS WITH COMPARISON RESULTS
+        # ================================================================
+        try:
+            print("\nCreating result views...")
+            
+            # Create view with detailed comparison summary
+            detailed_summary_data = [
+                ("COMPARISON_TIMESTAMP", str(session.sql("SELECT CURRENT_TIMESTAMP()").collect()[0][0])),
+                ("TABLE1_NAME", TABLE1),
+                ("TABLE2_NAME", TABLE2),
+                ("TABLE1_RECORDS", str(count1)),
+                ("TABLE2_RECORDS", str(count2)),
+                ("RECORD_COUNT_MATCH", "YES" if count1 == count2 else "NO"),
+                ("COMMON_COLUMNS", str(len(common_cols))),
+                ("MISSING_COLUMNS_IN_T2", str(len(missing_cols))),
+                ("EXTRA_COLUMNS_IN_T2", str(len(extra_cols))),
+                ("COLUMN_STRUCTURE_MATCH", "YES" if not missing_cols and not extra_cols else "NO"),
+                ("DUPLICATE_GROUPS_T1", str(dup1_count) if 'dup1_count' in locals() else "0"),
+                ("DUPLICATE_GROUPS_T2", str(dup2_count) if 'dup2_count' in locals() else "0"),
+                ("MISSING_RECORDS_COUNT", str(missing_count) if 'missing_count' in locals() else "0"),
+                ("EXTRA_RECORDS_COUNT", str(extra_count) if 'extra_count' in locals() else "0"),
+                ("TOTAL_ISSUES_FOUND", str(total_issues)),
+                ("OVERALL_STATUS", "PERFECT_MATCH" if total_issues == 0 else "DIFFERENCES_FOUND")
+            ]
+            
+            # Create DataFrame and save as view
+            detailed_df = session.create_dataframe(detailed_summary_data, schema=["METRIC", "VALUE"])
+            detailed_df.create_or_replace_view("DQ_COMPARISON_SUMMARY_VIEW")
+            print("Created view: DQ_COMPARISON_SUMMARY_VIEW")
+            
+            # Create view with missing records (if any)
+            if 'missing_in_2' in locals() and missing_count > 0:
+                missing_in_2.create_or_replace_view("DQ_MISSING_RECORDS_VIEW")
+                print("Created view: DQ_MISSING_RECORDS_VIEW")
+            
+            # Create view with extra records (if any)  
+            if 'extra_in_2' in locals() and extra_count > 0:
+                extra_in_2.create_or_replace_view("DQ_EXTRA_RECORDS_VIEW")
+                print("Created view: DQ_EXTRA_RECORDS_VIEW")
+                
+            # Create view with duplicate records from Table 1 (if any)
+            if 'dup1' in locals() and dup1_count > 0:
+                dup1.create_or_replace_view("DQ_TABLE1_DUPLICATES_VIEW")
+                print("Created view: DQ_TABLE1_DUPLICATES_VIEW")
+                
+            # Create view with duplicate records from Table 2 (if any)
+            if 'dup2' in locals() and dup2_count > 0:
+                dup2.create_or_replace_view("DQ_TABLE2_DUPLICATES_VIEW") 
+                print("Created view: DQ_TABLE2_DUPLICATES_VIEW")
+                
+            print(f"\nViews created successfully! You can now query:")
+            print("- SELECT * FROM DQ_COMPARISON_SUMMARY_VIEW;")
+            if missing_count > 0:
+                print("- SELECT * FROM DQ_MISSING_RECORDS_VIEW;")
+            if extra_count > 0:
+                print("- SELECT * FROM DQ_EXTRA_RECORDS_VIEW;")
+            if dup1_count > 0:
+                print("- SELECT * FROM DQ_TABLE1_DUPLICATES_VIEW;")
+            if dup2_count > 0:
+                print("- SELECT * FROM DQ_TABLE2_DUPLICATES_VIEW;")
+                
+        except Exception as view_error:
+            print(f"Warning: Could not create views: {view_error}")
+        # return f"Comparison completed: {count1:,} vs {count2:,} records"
+                
         # Return a simple DataFrame with summary results for Snowflake worksheet
         summary_data = [
             ("TABLE1_RECORDS", str(count1)),

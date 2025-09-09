@@ -96,79 +96,86 @@ def main(session: sp.Session):
         else:
             print("No key columns specified for duplicate analysis")
 
-        # Missing records analysis
+        # Missing records analysis - ONLY based on key columns
         print("\n=== MISSING RECORDS ANALYSIS ===")
+        print(f"Analyzing based ONLY on key columns: {KEY_COLUMNS}")
         try:
             # Records with keys in table1 not in table2 (truly missing records)
-            missing_in_2 = df1.join(df2.select(*KEY_COLUMNS), KEY_COLUMNS, "left_anti")
-            missing_count = missing_in_2.count()
+            df1_keys = df1.select(*KEY_COLUMNS).distinct()
+            df2_keys = df2.select(*KEY_COLUMNS).distinct()
             
-            # Records with keys in table2 not in table1 (truly extra records)
-            extra_in_2 = df2.join(df1.select(*KEY_COLUMNS), KEY_COLUMNS, "left_anti")
-            extra_count = extra_in_2.count()
+            missing_keys = df1_keys.subtract(df2_keys)
+            extra_keys = df2_keys.subtract(df1_keys)
             
-            print(f"Records with keys in Table 1 missing from Table 2: {missing_count:,}")
-            print(f"Records with keys in Table 2 missing from Table 1: {extra_count:,}")
+            missing_count = missing_keys.count()
+            extra_count = extra_keys.count()
             
-            # Records with same keys but different values in common columns
-            different_values_count = 0
-            if common_cols and len(common_cols) > len(KEY_COLUMNS):
-                # Select only common columns for comparison
-                common_cols_list = list(common_cols)
-                df1_common = df1.select(*common_cols_list)
-                df2_common = df2.select(*common_cols_list)
-                
-                # Find records that exist in both tables by key but have different values
-                matching_keys = df1.join(df2.select(*KEY_COLUMNS), KEY_COLUMNS, "inner")
-                matching_keys_count = matching_keys.count()
-                
-                # Compare full records with common columns only
-                identical_records = df1_common.intersect(df2_common)
-                identical_count = identical_records.count()
-                
-                different_values_count = matching_keys_count - identical_count
-                
-                print(f"Records with same keys but different values: {different_values_count:,}")
-                
-                if different_values_count > 0:
-                    # Create a view showing records with same keys but different values
-                    # Get records from table1 that have matching keys but different values
-                    df1_keys = df1.select(*KEY_COLUMNS)
-                    df2_keys = df2.select(*KEY_COLUMNS)
-                    same_keys = df1_keys.intersect(df2_keys)
-                    
-                    # Records from table1 with same keys
-                    records_with_same_keys_t1 = df1.join(same_keys, KEY_COLUMNS, "inner")
-                    # Records from table2 with same keys  
-                    records_with_same_keys_t2 = df2.join(same_keys, KEY_COLUMNS, "inner")
-                    
-                    # Find records that are different (subtract identical ones)
-                    different_records_t1 = records_with_same_keys_t1.select(*common_cols_list).subtract(
-                        records_with_same_keys_t2.select(*common_cols_list)
-                    )
-                    
-                    different_records_t2 = records_with_same_keys_t2.select(*common_cols_list).subtract(
-                        records_with_same_keys_t1.select(*common_cols_list)
-                    )
-                    
-                    # Store these for view creation
-                    different_records_table1 = different_records_t1
-                    different_records_table2 = different_records_t2
-                    
-                    print("Sample records with different values (Table 1 version):")
-                    different_records_t1.limit(5).show()
+            print(f"Key combinations in Table 1 missing from Table 2: {missing_count:,}")
+            print(f"Key combinations in Table 2 missing from Table 1: {extra_count:,}")
             
+            # Get full records for missing keys
             if missing_count > 0:
+                missing_in_2 = df1.join(missing_keys, KEY_COLUMNS, "inner")
                 print("Sample missing records (Table 1 -> Table 2):")
                 missing_in_2.limit(5).show()
             else:
-                print("No missing records from Table 1")
+                print("No missing key combinations from Table 1")
+                missing_in_2 = None
                 
             if extra_count > 0:
+                extra_in_2 = df2.join(extra_keys, KEY_COLUMNS, "inner")
                 print("Sample extra records (Table 2 -> Table 1):")
                 extra_in_2.limit(5).show()
             else:
-                print("No extra records in Table 2")
+                print("No extra key combinations in Table 2")
+                extra_in_2 = None
+            
+            # Records with same keys but different values in common columns
+            different_values_count = 0
+            different_records_table1 = None
+            different_records_table2 = None
+            
+            if common_cols and len(common_cols) > len(KEY_COLUMNS):
+                # Find keys that exist in both tables
+                matching_keys = df1_keys.intersect(df2_keys)
+                matching_keys_count = matching_keys.count()
+                
+                if matching_keys_count > 0:
+                    print(f"Key combinations that exist in both tables: {matching_keys_count:,}")
+                    
+                    # Select only common columns for comparison (including keys)
+                    common_cols_list = list(common_cols)
+                    df1_common = df1.select(*common_cols_list)
+                    df2_common = df2.select(*common_cols_list)
+                    
+                    # Find identical records (same keys AND same values in all common columns)
+                    identical_records = df1_common.intersect(df2_common)
+                    identical_count = identical_records.count()
+                    
+                    different_values_count = matching_keys_count - identical_count
+                    
+                    print(f"Records with same keys but different values in common columns: {different_values_count:,}")
+                    
+                    if different_values_count > 0:
+                        # Get records with matching keys from both tables
+                        records_with_matching_keys_t1 = df1.join(matching_keys, KEY_COLUMNS, "inner")
+                        records_with_matching_keys_t2 = df2.join(matching_keys, KEY_COLUMNS, "inner")
+                        
+                        # Find records that are different (subtract identical ones)
+                        different_records_table1 = records_with_matching_keys_t1.select(*common_cols_list).subtract(
+                            records_with_matching_keys_t2.select(*common_cols_list)
+                        )
+                        
+                        different_records_table2 = records_with_matching_keys_t2.select(*common_cols_list).subtract(
+                            records_with_matching_keys_t1.select(*common_cols_list)
+                        )
+                        
+                        print("Sample records with different values (Table 1 version):")
+                        different_records_table1.limit(5).show()
+                else:
+                    print("No matching key combinations found between tables")
+            else:
+                print("No additional columns to compare beyond key columns")
                 
         except Exception as e:
             print(f"Error in missing records analysis: {e}")
@@ -259,21 +266,21 @@ def main(session: sp.Session):
             print("Created view: DQ_COMPARISON_SUMMARY_VIEW")
             
             # Create view with missing records (if any)
-            if 'missing_in_2' in locals() and missing_count > 0:
+            if 'missing_in_2' in locals() and missing_in_2 is not None and missing_count > 0:
                 missing_in_2.create_or_replace_view("DEV_SILVER.DQ.DQ_MISSING_RECORDS_VIEW")
                 print("Created view: DQ_MISSING_RECORDS_VIEW")
             
             # Create view with extra records (if any)  
-            if 'extra_in_2' in locals() and extra_count > 0:
+            if 'extra_in_2' in locals() and extra_in_2 is not None and extra_count > 0:
                 extra_in_2.create_or_replace_view("DEV_SILVER.DQ.DQ_EXTRA_RECORDS_VIEW")
                 print("Created view: DQ_EXTRA_RECORDS_VIEW")
                 
             # Create view with records that have same keys but different values
-            if 'different_records_table1' in locals():
+            if 'different_records_table1' in locals() and different_records_table1 is not None:
                 different_records_table1.create_or_replace_view("DEV_SILVER.DQ.DQ_DIFFERENT_VALUES_T1_VIEW")
                 print("Created view: DQ_DIFFERENT_VALUES_T1_VIEW")
                 
-            if 'different_records_table2' in locals():
+            if 'different_records_table2' in locals() and different_records_table2 is not None:
                 different_records_table2.create_or_replace_view("DEV_SILVER.DQ.DQ_DIFFERENT_VALUES_T2_VIEW")
                 print("Created view: DQ_DIFFERENT_VALUES_T2_VIEW")
                 
@@ -293,12 +300,12 @@ def main(session: sp.Session):
                 print("- SELECT * FROM DEV_SILVER.DQ.DQ_MISSING_RECORDS_VIEW;")
             if extra_count > 0:
                 print("- SELECT * FROM DEV_SILVER.DQ.DQ_EXTRA_RECORDS_VIEW;")
-            if 'different_records_table1' in locals():
+            if 'different_records_table1' in locals() and different_records_table1 is not None:
                 print("- SELECT * FROM DEV_SILVER.DQ.DQ_DIFFERENT_VALUES_T1_VIEW;")
                 print("- SELECT * FROM DEV_SILVER.DQ.DQ_DIFFERENT_VALUES_T2_VIEW;")
-            if dup1_count > 0:
+            if 'dup1_count' in locals() and dup1_count > 0:
                 print("- SELECT * FROM DEV_SILVER.DQ.DQ_TABLE1_DUPLICATES_VIEW;")
-            if dup2_count > 0:
+            if 'dup2_count' in locals() and dup2_count > 0:
                 print("- SELECT * FROM DEV_SILVER.DQ.DQ_TABLE2_DUPLICATES_VIEW;")
                 
         except Exception as view_error:

@@ -12,18 +12,18 @@ import snowflake.snowpark as sp
 from snowflake.snowpark.functions import col, count, avg, median, min as min_func, max as max_func
 
 def main(session: sp.Session):
-    # ===== CONFIGURATION - UPDATE THESE VALUES =====
-TABLE1_CONFIG = {
-    "database": "your_database",
-    "schema": "your_schema", 
-    "table": "table1_name"
-}
+        # ===== CONFIGURATION - UPDATE THESE VALUES =====
+    TABLE1_CONFIG = {
+        "database": "your_database",
+        "schema": "your_schema", 
+        "table": "table1_name"
+    }
 
-TABLE2_CONFIG = {
-    "database": "your_database",
-    "schema": "your_schema",
-    "table": "table2_name"
-}
+    TABLE2_CONFIG = {
+        "database": "your_database",
+        "schema": "your_schema",
+        "table": "table2_name"
+    }
 
     KEY_COLUMNS = ['employee_id']  # The column(s) that uniquely identify each record
     # ===============================================
@@ -35,9 +35,7 @@ TABLE2_CONFIG = {
     TABLE1 = f'"{TABLE1_CONFIG["database"]}"."{TABLE1_CONFIG["schema"]}"."{TABLE1_CONFIG["table"]}"'
     TABLE2 = f'"{TABLE2_CONFIG["database"]}"."{TABLE2_CONFIG["schema"]}"."{TABLE2_CONFIG["table"]}"'
     
-    print(f"Comparing tables:")
-    print(f"Table 1: {TABLE1}")
-    print(f"Table 2: {TABLE2}")
+    print(f"Comparing: {TABLE1} vs {TABLE2}")
     print(f"Key columns: {KEY_COLUMNS}")
     print("-" * 50)
 
@@ -45,10 +43,8 @@ TABLE2_CONFIG = {
 
     try:
         # Read tables
-        print("Reading tables...")
         df1 = session.table(TABLE1)
         df2 = session.table(TABLE2)
-        print("Tables loaded successfully")
 
         # Basic record count comparison
         print("\n=== BASIC COMPARISON ===")
@@ -98,7 +94,7 @@ TABLE2_CONFIG = {
                 else:
                     print("No duplicates found in Table 2")
         
-    except Exception as e:
+            except Exception as e:
                 print(f"Error in duplicate analysis: {e}")
         else:
             print("No key columns specified for duplicate analysis")
@@ -121,59 +117,45 @@ TABLE2_CONFIG = {
             df1_keys = df1.select(*KEY_COLUMNS).distinct()
             df2_keys = df2.select(*KEY_COLUMNS).distinct()
             
-            # Debug: Show total distinct keys in each table
+            # Show total distinct keys in each table
             df1_keys_count = df1_keys.count()
             df2_keys_count = df2_keys.count()
-            print(f"DEBUG: Distinct key combinations in Table 1: {df1_keys_count:,}")
-            print(f"DEBUG: Distinct key combinations in Table 2: {df2_keys_count:,}")
+            print(f"Distinct keys in Table 1: {df1_keys_count:,}")
+            print(f"Distinct keys in Table 2: {df2_keys_count:,}")
             
             # Use left_anti join instead of subtract for more reliable results
             missing_keys = df1_keys.join(df2_keys, KEY_COLUMNS, "left_anti")
             extra_keys = df2_keys.join(df1_keys, KEY_COLUMNS, "left_anti")
             
-            missing_count = missing_keys.count()
-            extra_count = extra_keys.count()
-            
-            print(f"Key combinations in Table 1 missing from Table 2: {missing_count:,}")
-            print(f"Key combinations in Table 2 missing from Table 1: {extra_count:,}")
-            
-            # Debug: Show some sample keys from each table
-            if df1_keys_count > 0:
-                print("DEBUG: Sample keys from Table 1:")
-                df1_keys.limit(3).show()
-            if df2_keys_count > 0:
-                print("DEBUG: Sample keys from Table 2:")
-                df2_keys.limit(3).show()
-                
-            # If we're still getting false positives, let's debug the missing keys
-            if missing_count > 0:
-                print("DEBUG: Sample missing keys:")
-                missing_keys.limit(3).show()
-            if extra_count > 0:
-                print("DEBUG: Sample extra keys:")
-                extra_keys.limit(3).show()
-            
-            # Get full records for missing keys
-            if missing_count > 0:
+            # Get full records for missing keys to count properly
+            if missing_keys.count() > 0:
                 missing_in_2 = df1.join(missing_keys, KEY_COLUMNS, "inner")
-                print("Sample missing records (Table 1 -> Table 2):")
-                missing_in_2.limit(5).show()
+                missing_count = missing_in_2.count()
             else:
-                print("No missing key combinations from Table 1")
+                missing_count = 0
                 missing_in_2 = None
                 
-            if extra_count > 0:
+            if extra_keys.count() > 0:
                 extra_in_2 = df2.join(extra_keys, KEY_COLUMNS, "inner")
-                print("Sample extra records (Table 2 -> Table 1):")
-                extra_in_2.limit(5).show()
-        else:
-                print("No extra key combinations in Table 2")
+                extra_count = extra_in_2.count()
+            else:
+                extra_count = 0
                 extra_in_2 = None
             
-            # Records with different values in ANY common columns (including keys)
-            print(f"Analyzing differences in ALL common columns: {list(common_cols)}")
+            print(f"Missing records in Table 2: {missing_count:,}")
+            print(f"Extra records in Table 2: {extra_count:,}")
             
-            if common_cols:
+            # Show sample records if any issues found
+            if missing_count > 0:
+                print("Sample missing records:")
+                missing_in_2.limit(3).show()
+                
+            if extra_count > 0:
+                print("Sample extra records:")
+                extra_in_2.limit(3).show()
+            
+            # Records with same keys but different values in common columns
+            if common_cols and len(common_cols) > len(KEY_COLUMNS):
                 # Select only common columns for comparison (including keys)
                 common_cols_list = list(common_cols)
                 df1_common = df1.select(*common_cols_list)
@@ -215,7 +197,7 @@ TABLE2_CONFIG = {
                 different_records_table2 = None
                 different_values_count = 0
         
-    except Exception as e:
+        except Exception as e:
             print(f"Error in missing records analysis: {e}")
 
 
@@ -308,15 +290,15 @@ TABLE2_CONFIG = {
                     different_records_table1.create_or_replace_view("DEV_SILVER.DQ.DQ_DIFFERENT_VALUES_T1_VIEW")
                     record_count = different_records_table1.count()
                     print(f"Created view: DQ_DIFFERENT_VALUES_T1_VIEW ({record_count:,} records)")
-        except Exception as e:
+                except Exception as e:
                     print(f"Could not create DQ_DIFFERENT_VALUES_T1_VIEW: {e}")
     
             if 'different_records_table2' in locals() and different_records_table2 is not None:
-    try:
+                try:
                     different_records_table2.create_or_replace_view("DEV_SILVER.DQ.DQ_DIFFERENT_VALUES_T2_VIEW")
                     record_count = different_records_table2.count()
                     print(f"Created view: DQ_DIFFERENT_VALUES_T2_VIEW ({record_count:,} records)")
-    except Exception as e:
+                except Exception as e:
                     print(f"Could not create DQ_DIFFERENT_VALUES_T2_VIEW: {e}")
                 
             # Create view with duplicate records from Table 1 (always create, even if empty)
@@ -324,7 +306,7 @@ TABLE2_CONFIG = {
                 try:
                     dup1.create_or_replace_view("DEV_SILVER.DQ.DQ_TABLE1_DUPLICATES_VIEW")
                     print(f"Created view: DQ_TABLE1_DUPLICATES_VIEW ({dup1_count:,} records)")
-        except Exception as e:
+                except Exception as e:
                     print(f"Could not create DQ_TABLE1_DUPLICATES_VIEW: {e}")
             else:
                 # Create empty duplicate view
@@ -332,7 +314,7 @@ TABLE2_CONFIG = {
                     empty_dup_df = session.create_dataframe([], schema=["KEY_COLUMN", "COUNT"])
                     empty_dup_df.create_or_replace_view("DEV_SILVER.DQ.DQ_TABLE1_DUPLICATES_VIEW")
                     print("Created view: DQ_TABLE1_DUPLICATES_VIEW (0 records)")
-    except Exception as e:
+                except Exception as e:
                     print(f"Could not create empty DQ_TABLE1_DUPLICATES_VIEW: {e}")
                 
             # Create view with duplicate records from Table 2 (always create, even if empty)
@@ -340,7 +322,7 @@ TABLE2_CONFIG = {
                 try:
                     dup2.create_or_replace_view("DEV_SILVER.DQ.DQ_TABLE2_DUPLICATES_VIEW") 
                     print(f"Created view: DQ_TABLE2_DUPLICATES_VIEW ({dup2_count:,} records)")
-        except Exception as e:
+                except Exception as e:
                     print(f"Could not create DQ_TABLE2_DUPLICATES_VIEW: {e}")
             else:
                 # Create empty duplicate view
@@ -351,14 +333,7 @@ TABLE2_CONFIG = {
                 except Exception as e:
                     print(f"Could not create empty DQ_TABLE2_DUPLICATES_VIEW: {e}")
                 
-            print(f"\nAll views created successfully! You can now query:")
-            print("- SELECT * FROM DEV_SILVER.DQ.DQ_COMPARISON_SUMMARY_VIEW;")
-            print("- SELECT * FROM DEV_SILVER.DQ.DQ_MISSING_RECORDS_VIEW;")
-            print("- SELECT * FROM DEV_SILVER.DQ.DQ_EXTRA_RECORDS_VIEW;")
-            print("- SELECT * FROM DEV_SILVER.DQ.DQ_DIFFERENT_VALUES_T1_VIEW;")
-            print("- SELECT * FROM DEV_SILVER.DQ.DQ_DIFFERENT_VALUES_T2_VIEW;")
-            print("- SELECT * FROM DEV_SILVER.DQ.DQ_TABLE1_DUPLICATES_VIEW;")
-            print("- SELECT * FROM DEV_SILVER.DQ.DQ_TABLE2_DUPLICATES_VIEW;")
+            print(f"\nViews created successfully!")
                 
         except Exception as view_error:
             print(f"Warning: Could not create views: {view_error}")

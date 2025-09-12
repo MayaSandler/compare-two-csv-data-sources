@@ -202,9 +202,9 @@ Multiple detailed analysis views will be created in `DEV_SILVER.DQ` schema (or w
 *Views will be created whether data exists or not for consistancy*
 
 ## How to Run in Snowflake Worksheets
-1. Go to **Worksheets** in your Snowflake account
-2. Create a **new Python worksheet** (not SQL worksheet)
-3. Copy the Python script from the file `snowflake_table_comparison.py' in this repo into the new Python notebook
-4. In your workbook, update table schemas and key columns in the configuration area (upper most porion of the script): 
-5. **Click Run** to execute the analysis
-6. **Query Snowflake** view to look at the analysis results
+1. Go to *Worksheets* in your Snowflake account
+2. Create a new *Python worksheet* (not SQL worksheet)
+3. Copy the Python script from the file `snowflake_table_comparison.py' in this repo and paste it into the new Python notebook
+4. In your workbook, update table schemas and key columns in the configuration area (upper most porion of the script; marked area) 
+5. Click Run to execute the analysis
+6. Query Snowflake views to look at the analysis results

@@ -163,13 +163,8 @@ python csv_comparison.py
 
 
 # ❄️ Snowflake Table Comparison Tool
-**File:** `table_comparison_snowpark.py`  
+**File:** `snowflake_table_comparison.py`  
 **Purpose:** Compare two Snowflake tables directly in a Snowflake worksheet using Snowpark. The features and the output of this script is similar to the csv comparison process. To execute this script, please follow section 'How to Run in Snowflake Worksheets'
-
-## Output
-- **Console output**: Real-time comparison results
-- **Text file**: Detailed analysis report (`comparison_results__table1_vs_table2.txt`)
-- **CSV file**: Error records with details (`error_records__table1_vs_table2.csv`)
 
 ## Features
 - Record count comparison
@@ -180,19 +175,40 @@ python csv_comparison.py
 - Statistical comparison for numeric columns
 - Value distribution analysis
 
+## Output
+
+### 1. Results Area Display
+When executed in Snowflake Python worksheet, displays a summary table with key metrics in the results pane for easy snapshot of the analysis:
+- TABLE1_RECORDS / TABLE2_RECORDS: record counts from both tables
+- RECORDS_MATCH: YES/NO - indicating if record counts match
+- COMMON_COLUMNS: number of columns present in both tables
+- MISSING_COLUMNS_T2: columns in Table1 but missing in Table2
+- EXTRA_COLUMNS_T2: columns in Table2 but not in Table1  
+- MISSING_RECORDS: records in Table1 missing from Table2 (by key columns)
+- EXTRA_RECORDS: records in Table2 missing from Table1 (by key columns)
+- DIFFERENT_VALUES: records with same keys but different values in other columns
+- TOTAL_ISSUES: Total count of all issues found
+- STATUS: PERFECT_MATCH or DIFFERENCES_FOUND
+
+### 2. Database Views Created
+Multiple detailed analysis views will be created in `DEV_SILVER.DQ` schema (or where you set it to be in the python script):
+- **`DQ_COMPARISON_SUMMARY_VIEW`**: Comprehensive comparison summary with analysis execution timestamp, table names, and all metrics tested
+- **`DQ_MISSING_RECORDS_VIEW`**: Full records from Table1 that are missing in Table2 (based on key columns)
+- **`DQ_EXTRA_RECORDS_VIEW`**: Full records from Table2 that don't exist in Table1 (based on key columns)
+- **`DQ_DIFFERENT_VALUES_T1_VIEW`**: Records from Table1 that have same key-values but different values in other columns
+- **`DQ_DIFFERENT_VALUES_T2_VIEW`**: Records from Table2 that have same key-values but different values in other columns  
+- **`DQ_TABLE1_DUPLICATES_VIEW`**: Duplicate records in Table1 with occurrence counts (based on key columns) 
+- **`DQ_TABLE2_DUPLICATES_VIEW`**: Duplicate records in Table2 with occurrence counts (based on key columns)
+*Views will be created whether data exists or not for consistancy*
+
 ## How to Run in Snowflake Worksheets
 
-### Step 1: In Snowflake - create `table_comparison_snowpark.py` and configure table schemas and key columns
+### Step 1: In Snowflake - create `snowflake_table_comparison.py` and configure table schemas and key columns
 1. Go to **Worksheets** in your Snowflake account
 2. Create a **new Python worksheet** (not SQL worksheet)
-3. Copy the Python script from the file `table_comparison_snowpark.py' in this repo into the new Python notebook
-4. In your workbook, update these configuration lines (from the Python script `table_comparison_snowpark.py)' to configure your table schemas and key columns: 
+3. Copy the Python script from the file `snowflake_table_comparison.py' in this repo into the new Python notebook
+4. In your workbook, update table schemas and key columns in the configuration area (upper most porion of the script): 
 
-   ```python
-   TABLE1_CONFIG = {"database": "DB", "schema": "SCHEMA", "table": "TABLE1"}
-   TABLE2_CONFIG = {"database": "DB", "schema": "SCHEMA", "table": "TABLE2"}  
-   KEY_COLUMNS = ['employee_id']
-   ```
-4. **Click Run**
+4. **Click Run** to execute the analysis
 
-
+5. **Query Snowflake** view to look at the analysis results

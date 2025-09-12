@@ -1,8 +1,8 @@
 # Data Comparison Tools
 
 This repository contains *two* powerful data comparison tools for different use cases: 
-1. [CSV File Comparison Tool](https://github.com/MayaSandler/compare-two-data-sources/edit/main/README.md#-csv-file-comparison-tool)  
-2. [Snowflake Table Comparison Tool](https://github.com/MayaSandler/compare-two-data-sources/edit/main/README.md#%EF%B8%8F-snowflake-table-comparison-tool) 
+1. [CSV File Comparison Tool](https://github.com/MayaSandler/compare-two-data-sources/blob/main/README.md#-csv-file-comparison-tool)  
+2. [Snowflake Table Comparison Tool](https://github.com/MayaSandler/compare-two-data-sources/blob/main/README.md#-csv-file-comparison-tool) 
 
 ---
 

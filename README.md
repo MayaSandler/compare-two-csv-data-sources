@@ -199,6 +199,7 @@ Multiple detailed analysis views will be created in `DEV_SILVER.DQ` schema (or w
 - **`DQ_DIFFERENT_VALUES_T2_VIEW`**: Records from Table2 that have same key-values but different values in other columns  
 - **`DQ_TABLE1_DUPLICATES_VIEW`**: Duplicate records in Table1 with occurrence counts (based on key columns) 
 - **`DQ_TABLE2_DUPLICATES_VIEW`**: Duplicate records in Table2 with occurrence counts (based on key columns)
+
 *Views will be created whether data exists or not for consistancy*
 
 ## How to Run in Snowflake Worksheets
